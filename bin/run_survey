@@ -4,12 +4,12 @@
 vanilla survey strategy
 """
 
-
 import sys
 sys.path.insert(0, '/gpfs/data/jeforero/quicksurvey/py/')
-
-
 from quicksurvey import targeting
 from quicksurvey import fiberassign 
+from quicksurvey import util
 
-targeting.mocks.printme()
+# load the configuration
+util.configuration.setup_survey('survey_config.cfg')
+print(util.configuration.__CONFIG__.get('targeting', 'mock_input_path'))
