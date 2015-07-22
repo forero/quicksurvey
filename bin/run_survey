@@ -42,13 +42,14 @@ tile_filename_list = nextfields.select.all_available_files(
     condition="*.fits")
 n_tiles  = np.size(tile_filename_list)
 
-# loop over the cicle of the survey
+# loop over the cycle of the survey
 for day in range(int(util.configuration.__CONFIG__.get('survey', 'number_days'))):
     print('day %d'%(day))
 
 
     # loop over each tile
     for tile in range(n_tiles):
+        print tile
         tile_file = tile_filename_list[tile]
         target_tile_pack = util.TargetTile(tile_file)        
         print target_tile_pack.tile_ra, target_tile_pack.tile_dec, target_tile_pack.n
@@ -56,10 +57,12 @@ for day in range(int(util.configuration.__CONFIG__.get('survey', 'number_days'))
         # move the targets to coordinates on the focal plane
         target_tile_pack.set_xy_on_focalplane()
 
-        
+        # loop over each positioner to allocate a galaxy
+        n_positioner = len(positioner_pack)
+        for positioner in range(n_positioner):
+            new_pos = fiberassign.assign.assign_positioner(
+                positioner_pack[positioner], target_tile_pack)
 
-#        tile_data = 
-        
         
     # select the fields that will be observed
 

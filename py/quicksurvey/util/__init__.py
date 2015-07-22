@@ -162,12 +162,19 @@ class TargetTile(object):
         self.x = np.zeros(self.n)
         self.y = np.zeros(self.n)
         self.fiber_id  = -1*np.ones(self.n, dtype='i4')
-
+        
     def set_xy_on_focalplane(self):
         """
         Setes the values of x-y (in mm) on the focal plane given a pointing coordinates RA, dec
         """
         self.x, self.y = radec2xy(self.ra, self.dec, self.tile_ra, self.tile_dec)
+
+    def reset(self):
+        self.fiber_id[:] = -1
+        self.x[:] = 0.0
+        self.y[:] = 0.0
+
+    
 
 
 def rot_displ_shape(shape_coords, angle=0.0, radius=0.0):
@@ -222,6 +229,9 @@ class Positioner(object):
         self.Theta = Theta
         self.Phi = Phi
         self.id = id
+        self.available_targets = None
+        self.n_available = 0
+        self.target = -1
         
         self.lower_pos = np.array(((0.387, 0.990), (0.967,0.410), (0.967, -0.410), (0.387, -0.990), (-0.649, -0.990), 
                     (-1.000, -0.639), (-1.000, 0.639), (-0.649, 0.990)))
@@ -286,4 +296,36 @@ class Positioner(object):
         ax.add_patch(patch_u)
         ax.add_patch(patch_c)
         ax.add_patch(patch_l)
+
+    def set_available(self, ID_list):
+        """
+        Set-up the list and number of available targets to this positioner
+         
+        Args:
+             ID_list (int): array of available galaxies
+        """
+        self.available_targets = ID_list.copy()
+        self.n_targets = np.size(self.available_targets)
+
+    def reset_available(self):
+        """
+        Resets the list and number of available targets to this positioner
+        """
+        self.available_targets  =  None
+        self.n_targets = 0
+
+    def set_target(self, target_id):
+        """
+        Sets the id of the target assigned to this positioner
+        Args:
+            target_id (int): id of the target assigned to this positioner
+        """
+        self.target  = target_id
+
+    def reset_target(self, target_id):
+        """
+        resets the id of the target assigned to this positioner
+        """
+        self.target  = -1
+        
 
