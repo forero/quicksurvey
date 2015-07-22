@@ -1,7 +1,24 @@
 import numpy as np
 
 def assign_positioner(SinglePositioner, Targets):
-    
+    """
+    Finds a target to assign to a positioner.
+
+    Args:
+        SinglePositioner (Positioner class object): central positioner 
+             considered for the assignemtn.
+        Targets (TargetTile class object): target information about all the 
+             targets  in a given tile.
+    Returns:
+        [x_on_target, y_on_target]
+
+
+    Note:
+         Right now this version does not take into account:
+         - Different priorities among different targets.
+         - Information on previous observation of the Targets
+         - Information about neighboring positioners (to check for collisions)
+    """
     x_on_target = 0.0
     y_on_target = 0.0
 
