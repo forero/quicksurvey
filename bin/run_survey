@@ -5,11 +5,42 @@ vanilla survey strategy
 """
 
 import sys
+import numpy as np
 sys.path.insert(0, '/gpfs/data/jeforero/quicksurvey/py/')
 from quicksurvey import targeting
 from quicksurvey import fiberassign 
 from quicksurvey import util
+from quicksurvey import nextfields
 
 # load the configuration
-util.configuration.setup_survey('survey_config.cfg')
-print(util.configuration.__CONFIG__.get('targeting', 'mock_input_path'))
+util.configuration.setup_survey('survey_config_cosma.cfg')
+
+# load a mock catalog and perform target selection
+
+# make target selection
+
+# loop over the cicle of the survey
+for day in range(int(util.configuration.__CONFIG__.get('survey', 'number_days'))):
+    print('day %d'%(day))
+
+    # run fiber allocation over all observable fields
+    
+    # select the fields that will be observed
+    tile_filename_list = nextfields.select.all_available_files(
+        directory=util.configuration.__CONFIG__.get('targeting', 'target_path'), 
+        condition="*.fits")
+
+    # loop over each field 
+    print tile_filename_list
+    n_tiles  = np.size(tile_filename_list)
+    for tile in range(n_tiles):
+        print('tile %d'%(tile))
+        
+        # make the observation of that field
+
+        # get the redshift from the observation
+
+        # update the observations record
+        
+
+
