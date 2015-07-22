@@ -20,7 +20,7 @@ def all_available_files(directory="./", condition="*"):
     import glob
 
     filename_list = glob.glob(directory + '/' + condition)
-    
+
     return filename_list
 
     

@@ -4,7 +4,6 @@ Setup the global variable with all the configuration options
 import ConfigParser
 
 
-
 def setup_survey(configfile="test.cfg"):
     """
     Loads the global variables that define the survey.

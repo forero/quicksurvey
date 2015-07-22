@@ -5,6 +5,7 @@ vanilla survey strategy
 """
 
 import sys
+import os
 import numpy as np
 sys.path.insert(0, '/gpfs/data/jeforero/quicksurvey/py/')
 from quicksurvey import targeting
@@ -19,22 +20,43 @@ util.configuration.setup_survey('survey_config_cosma.cfg')
 
 # make target selection
 
+# load the focal plane setup
+fiberlocation = util.configuration.__CONFIG__.get('general', 'desimodel_path'),
+
+
+fiber_file = os.path.join(util.configuration.__CONFIG__.get('general', 'desimodel_path')
+                          , 'data/focalplane/', 'fiberpos.fits')
+
+fiber_pack =  util.FocalPlaneFibers(fiber_file)
+
+print fiber_pack.x_focal
+
+
 # loop over the cicle of the survey
 for day in range(int(util.configuration.__CONFIG__.get('survey', 'number_days'))):
     print('day %d'%(day))
 
-    # run fiber allocation over all observable fields
-    
-    # select the fields that will be observed
+    #makes a list of all available fields
     tile_filename_list = nextfields.select.all_available_files(
         directory=util.configuration.__CONFIG__.get('targeting', 'target_path'), 
         condition="*.fits")
+    n_tiles  = np.size(tile_filename_list)
+
+    # run fiberassign over all available fields
+    for tile in range(n_tiles):
+        tile_file = tile_filename_list[tile]
+        target_tile_pack = util.TargetTile(tile_file)        
+        print target_tile_pack.tile_ra, target_tile_pack.tile_dec, target_tile_pack.n
+
+#        tile_data = 
+        
+        
+    # select the fields that will be observed
 
     # loop over each field 
-    print tile_filename_list
-    n_tiles  = np.size(tile_filename_list)
-    for tile in range(n_tiles):
-        print('tile %d'%(tile))
+
+#    for tile in range(n_tiles):
+#        print('tile %d'%(tile))
         
         # make the observation of that field
 
