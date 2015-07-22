@@ -20,33 +20,43 @@ util.configuration.setup_survey('survey_config_cosma.cfg')
 
 # make target selection
 
-# load the focal plane setup
+
+# load pack unperturbed fibers on the focal plane
 fiberlocation = util.configuration.__CONFIG__.get('general', 'desimodel_path'),
-
-
 fiber_file = os.path.join(util.configuration.__CONFIG__.get('general', 'desimodel_path')
                           , 'data/focalplane/', 'fiberpos.fits')
-
 fiber_pack =  util.FocalPlaneFibers(fiber_file)
 
-print fiber_pack.x_focal
 
+# generate a pack of positioners attached to the fibers
+positioner_pack = []
+for i in range(fiber_pack.n_fiber):
+    positioner_pack.append(util.Positioner(offset_x = fiber_pack.x_focal[i], 
+                                           offset_y = fiber_pack.y_focal[i],
+                                           Theta=0.0, Phi=0.0, 
+                                           id = fiber_pack.fiber_id[i]))
+    
+#makes a list of all available fields
+tile_filename_list = nextfields.select.all_available_files(
+    directory=util.configuration.__CONFIG__.get('targeting', 'target_path'), 
+    condition="*.fits")
+n_tiles  = np.size(tile_filename_list)
 
 # loop over the cicle of the survey
 for day in range(int(util.configuration.__CONFIG__.get('survey', 'number_days'))):
     print('day %d'%(day))
 
-    #makes a list of all available fields
-    tile_filename_list = nextfields.select.all_available_files(
-        directory=util.configuration.__CONFIG__.get('targeting', 'target_path'), 
-        condition="*.fits")
-    n_tiles  = np.size(tile_filename_list)
 
-    # run fiberassign over all available fields
+    # loop over each tile
     for tile in range(n_tiles):
         tile_file = tile_filename_list[tile]
         target_tile_pack = util.TargetTile(tile_file)        
         print target_tile_pack.tile_ra, target_tile_pack.tile_dec, target_tile_pack.n
+
+        # move the targets to coordinates on the focal plane
+        target_tile_pack.set_xy_on_focalplane()
+
+        
 
 #        tile_data = 
         

@@ -13,6 +13,83 @@ import shapely.geometry as shapeg
 import descartes as desc
 
 
+def plate_dist(theta):
+    """
+    Returns the radial distance on the plate (mm) given the angle (radians).
+    
+    Input:
+        theta (float): angle from the center of the plate (radians)
+
+    Returns:
+        radius (float): position from the center of the plate in mm.
+        
+    Note:
+        This is a fit to the provided data
+    """
+    p = np.array([8.297E5,-1750.0,1.394E4,0.0])
+    radius = 0.0
+    for i in range(4):
+        radius = theta*radius + p[i]
+    return radius
+    
+def radec2xy(object_ra, object_dec, tile_ra, tile_dec):
+    """
+    Returns the x,y coordinats of an object on the plate.
+
+    Input:
+        object_ra (float) : 1D array, RA coordinates of the object (degrees)
+        object_dec (float) : 1D array, dec coordinates of the object (degrees)
+        tile_ra (float) : RA position of the center of the tile
+        tile_dec (float) : dec position of the center of the tile
+    Returns:
+        x (float) : 1D array, x position on the focal plane (in mm)
+        y (float) : 1D array, y position on the focal plane (in mm)
+        
+    It takes as an input the ra,dec coordinates ob the object 
+    and the ra,dec coordinates of the plate's center.
+    """
+    object_theta = (90.0 - object_dec)*np.pi/180.0
+    object_phi = object_ra*np.pi/180.0
+    o_hat0 = np.sin(object_theta)*np.cos(object_phi)
+    o_hat1 = np.sin(object_theta)*np.sin(object_phi)
+    o_hat2 = np.cos(object_theta)
+    
+    tile_theta = (90.0 - tile_dec)*np.pi/180.0
+    tile_phi = tile_ra*np.pi/180.0
+    t_hat0 = np.sin(tile_theta)*np.cos(tile_phi)
+    t_hat1 = np.sin(tile_theta)*np.sin(tile_phi)
+    t_hat2 = np.cos(tile_theta)
+    
+    
+    #we make a rotation on o_hat, so that t_hat ends up aligned with 
+    #the unit vector along z. This is composed by a first rotation around z
+    #of an angle pi/2 - phi and a second rotation around x by an angle theta, 
+    #where theta and phi are the angles describin t_hat.
+    
+    costheta = t_hat2
+    sintheta = np.sqrt(1.0-costheta*costheta) + 1E-10
+    cosphi = t_hat0/sintheta
+    sinphi = t_hat1/sintheta
+    
+    #First rotation, taking into account that cos(pi/2 -phi) = sin(phi) and sin(pi/2-phi)=cos(phi)
+    n_hat0 = sinphi*o_hat0 - cosphi*o_hat1
+    n_hat1 = cosphi*o_hat0 + sinphi*o_hat1
+    n_hat2 = o_hat2
+    
+    #Second rotation
+    nn_hat0 = n_hat0
+    nn_hat1 = costheta*n_hat1 - sintheta*n_hat2
+    nn_hat2 = sintheta*n_hat1 + costheta*n_hat2
+    
+    #Now find the radius on the plate
+    theta = np.sqrt(nn_hat0*nn_hat0 + nn_hat1*nn_hat1)
+    radius = plate_dist(theta)
+    x = radius * nn_hat0/theta
+    y = radius * nn_hat1/theta
+    
+    return x,y
+
+
 class FocalPlaneFibers(object):
     """
     Keeps the relevant information to position fibers on the focal plane
@@ -26,6 +103,7 @@ class FocalPlaneFibers(object):
         positioner_id (int) : 
         spectrograph_id (int) : 
         neighbors (int) : 2D array of shape (n_fibers, 6) holding the fiber of the 6 nearest fibers.
+        n_fiber (int) : total number of fibers
     """
 
     def __init__(self, filename):
@@ -37,7 +115,15 @@ class FocalPlaneFibers(object):
         self.fiber_id = hdulist[1].data['fiber']
         self.positioner_id = hdulist[1].data['positioner']
         self.spectrograph_id = hdulist[1].data['spectrograph']
-        self.neighbors = np.zeros((np.size(self.x_focal), 6)) 
+        self.neighbors = np.zeros((np.size(self.x_focal), 6), dtype='i4') 
+        self.n_fiber = np.size(self.x_focal)
+
+        for i in range(self.n_fiber):
+            x = self.x_focal[i]
+            y = self.y_focal[i]
+            radius = np.sqrt((self.x_focal -x )** 2 + (self.y_focal - y)**2)
+            ids = radius.argsort()
+            self.neighbors[i,:] = ids[1:7]
         
         
 
@@ -57,7 +143,9 @@ class TargetTile(object):
          tile_id (int): ID identifying the tile's ID
          n_target (int): number of targets stored in the object
          filename (string): original filename from which the info was loaded
-
+         x (float): array of positions on the focal plane, in mm
+         y (float): array of positions on the focal plane, in mm
+         fiber_id (int): array of fiber_id to which the target is assigned
     """
     def __init__(self, filename):
 
@@ -71,6 +159,15 @@ class TargetTile(object):
         self.tile_dec = hdulist[1].header['TILE_DEC']
         self.tile_id = hdulist[1].header['TILE_ID']
         self.n = np.size(self.ra)
+        self.x = np.zeros(self.n)
+        self.y = np.zeros(self.n)
+        self.fiber_id  = -1*np.ones(self.n, dtype='i4')
+
+    def set_xy_on_focalplane(self):
+        """
+        Setes the values of x-y (in mm) on the focal plane given a pointing coordinates RA, dec
+        """
+        self.x, self.y = radec2xy(self.ra, self.dec, self.tile_ra, self.tile_dec)
 
 
 def rot_displ_shape(shape_coords, angle=0.0, radius=0.0):
@@ -103,14 +200,14 @@ class Positioner(object):
         Theta (float): angle of the inner arm, in degrees
         Phi (float): angle of the outer arm, in degrees
     """
-    def __init__(self, offset_x = 0.0, offset_y=0.0, Theta=0.0, Phi=0.0):
+    def __init__(self, offset_x = 0.0, offset_y=0.0, Theta=0.0, Phi=0.0, id=0):
         """        
         Args:
             offset_x (float): position on the focal plane in mm.
             offset_y (float): position on the focal plane in mm.
             Theta (float): angle of the inner arm in degrees.
             Phi (float): angle of the outer arm in degrees.
-            
+            id (int) : positioner ID
         Note:
             Coordinates are taken from
             https://desi.lbl.gov/trac/browser/code/focalplane/positioner_control/trunk/anticollision/pos_geometry.m
@@ -124,6 +221,7 @@ class Positioner(object):
         self.Eo = 9.990 # outer clear rotation envelope
         self.Theta = Theta
         self.Phi = Phi
+        self.id = id
         
         self.lower_pos = np.array(((0.387, 0.990), (0.967,0.410), (0.967, -0.410), (0.387, -0.990), (-0.649, -0.990), 
                     (-1.000, -0.639), (-1.000, 0.639), (-0.649, 0.990)))
