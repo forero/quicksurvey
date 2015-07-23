@@ -34,7 +34,7 @@ tile_filename_list = nextfields.select.all_available_files(
 n_tiles  = np.size(tile_filename_list)
 
 # initializes the tile by tile setup with the observed field information
-nextfields.
+
 
 
 # loop over each tile
