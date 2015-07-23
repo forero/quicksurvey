@@ -90,91 +90,10 @@ def radec2xy(object_ra, object_dec, tile_ra, tile_dec):
     return x,y
 
 
-class FocalPlaneFibers(object):
-    """
-    Keeps the relevant information to position fibers on the focal plane
 
-    Attributes:
-        The properties initialized in the __init__ procedure:
-        x_focal (float) : array for the x_positions on the focal plane, in mm
-        y_focal (float) : array for the y_positions on the focal plane, in mm        
-        z_focal (float) : array for the y_positions on the focal plane, in mm        
-        fiber_id (int) :
-        positioner_id (int) : 
-        spectrograph_id (int) : 
-        neighbors (int) : 2D array of shape (n_fibers, 6) holding the fiber of the 6 nearest fibers.
-        n_fiber (int) : total number of fibers
-    """
-
-    def __init__(self, filename):
-        hdulist = fits.open(filename)        
-        self.filename = filename
-        self.x_focal = hdulist[1].data['x']
-        self.y_focal = hdulist[1].data['y']
-        self.z_focal = hdulist[1].data['z']
-        self.fiber_id = hdulist[1].data['fiber']
-        self.positioner_id = hdulist[1].data['positioner']
-        self.spectrograph_id = hdulist[1].data['spectrograph']
-        self.neighbors = np.zeros((np.size(self.x_focal), 6), dtype='i4') 
-        self.n_fiber = np.size(self.x_focal)
-
-        for i in range(self.n_fiber):
-            x = self.x_focal[i]
-            y = self.y_focal[i]
-            radius = np.sqrt((self.x_focal -x )** 2 + (self.y_focal - y)**2)
-            ids = radius.argsort()
-            self.neighbors[i,:] = ids[1:7]
-        
         
 
 
-class TargetTile(object):
-    """
-    Keeps the relevant information for targets on a tile.
-
-    Attributes:
-         The properties initialized in the __init__ procedure:
-         ra (float): array for the target's RA
-         dec (float): array for the target's dec
-         type (string): array for the type of target
-         id (int): array of unique IDs for each target
-         tile_ra (float): RA identifying the tile's center
-         tile_dec (float) : dec identifying the tile's center
-         tile_id (int): ID identifying the tile's ID
-         n_target (int): number of targets stored in the object
-         filename (string): original filename from which the info was loaded
-         x (float): array of positions on the focal plane, in mm
-         y (float): array of positions on the focal plane, in mm
-         fiber_id (int): array of fiber_id to which the target is assigned
-    """
-    def __init__(self, filename):
-
-        hdulist = fits.open(filename)        
-        self.filename = filename
-        self.ra = hdulist[1].data['RA']
-        self.dec = hdulist[1].data['DEC']
-        self.type = hdulist[1].data['OBJTYPE']
-        self.id = hdulist[1].data['TARGETID']
-        self.tile_ra = hdulist[1].header['TILE_RA']
-        self.tile_dec = hdulist[1].header['TILE_DEC']
-        self.tile_id = hdulist[1].header['TILE_ID']
-        self.n = np.size(self.ra)
-        self.x = np.zeros(self.n)
-        self.y = np.zeros(self.n)
-        self.fiber_id  = -1*np.ones(self.n, dtype='i4')
-        
-    def set_xy_on_focalplane(self):
-        """
-        Setes the values of x-y (in mm) on the focal plane given a pointing coordinates RA, dec
-        """
-        self.x, self.y = radec2xy(self.ra, self.dec, self.tile_ra, self.tile_dec)
-
-    def reset(self):
-        self.fiber_id[:] = -1
-        self.x[:] = 0.0
-        self.y[:] = 0.0
-
-    
 
 
 def rot_displ_shape(shape_coords, angle=0.0, radius=0.0):
@@ -229,9 +148,7 @@ class Positioner(object):
         self.Theta = Theta
         self.Phi = Phi
         self.id = id
-        self.available_targets = None
-        self.n_available = 0
-        self.target = -1
+        
         
         self.lower_pos = np.array(((0.387, 0.990), (0.967,0.410), (0.967, -0.410), (0.387, -0.990), (-0.649, -0.990), 
                     (-1.000, -0.639), (-1.000, 0.639), (-0.649, 0.990)))
@@ -297,35 +214,142 @@ class Positioner(object):
         ax.add_patch(patch_c)
         ax.add_patch(patch_l)
 
-    def set_available(self, ID_list):
+        
+
+
+class TargetTile(object):
+    """
+    Keeps the relevant information for targets on a tile.
+
+    Attributes:
+         The properties initialized in the __init__ procedure:
+         ra (float): array for the target's RA
+         dec (float): array for the target's dec
+         type (string): array for the type of target
+         id (int): array of unique IDs for each target
+         tile_ra (float): RA identifying the tile's center
+         tile_dec (float) : dec identifying the tile's center
+         tile_id (int): ID identifying the tile's ID
+         n_target (int): number of targets stored in the object
+         filename (string): original filename from which the info was loaded
+         x (float): array of positions on the focal plane, in mm
+         y (float): array of positions on the focal plane, in mm
+         fiber_id (int): array of fiber_id to which the target is assigned
+    """
+    def __init__(self, filename):
+
+        hdulist = fits.open(filename)        
+        self.filename = filename
+        self.ra = hdulist[1].data['RA']
+        self.dec = hdulist[1].data['DEC']
+        self.type = hdulist[1].data['OBJTYPE']
+        self.id = hdulist[1].data['TARGETID']
+        self.tile_ra = hdulist[1].header['TILE_RA']
+        self.tile_dec = hdulist[1].header['TILE_DEC']
+        self.tile_id = hdulist[1].header['TILE_ID']
+        self.n = np.size(self.ra)
+        self.x, self.y = radec2xy(self.ra, self.dec, self.tile_ra, self.tile_dec)
+
+
+
+class FocalPlaneFibers(object):
+    """
+    Keeps the relevant information to position fibers on the focal plane
+
+    Attributes:
+        The properties initialized in the __init__ procedure:
+        x_focal (float) : array for the x_positions on the focal plane, in mm
+        y_focal (float) : array for the y_positions on the focal plane, in mm        
+        z_focal (float) : array for the y_positions on the focal plane, in mm        
+        fiber_id (int) :
+        positioner_id (int) : 
+        spectrograph_id (int) : 
+        neighbors (int) : 2D array of shape (n_fibers, 6) holding the fiber of the 6 nearest fibers.
+        n_fiber (int) : total number of fibers
+    """
+
+    def __init__(self, filename):
+        hdulist = fits.open(filename)        
+        self.filename = filename
+        self.x_focal = hdulist[1].data['x']
+        self.y_focal = hdulist[1].data['y']
+        self.z_focal = hdulist[1].data['z']
+        self.fiber_id = hdulist[1].data['fiber']
+        self.positioner_id = hdulist[1].data['positioner']
+        self.spectrograph_id = hdulist[1].data['spectrograph']
+        self.neighbors = np.zeros((np.size(self.x_focal), 6), dtype='i4') 
+        self.n_fiber = np.size(self.x_focal)
+
+        for i in range(self.n_fiber):
+            x = self.x_focal[i]
+            y = self.y_focal[i]
+            radius = np.sqrt((self.x_focal -x )** 2 + (self.y_focal - y)**2)
+            ids = radius.argsort()
+            self.neighbors[i,:] = ids[1:7]
+        
+
+        # This section is related to targets
+        self.available_targets = [None] * self.n_fiber
+        self.n_targets = np.zeros(self.n_fiber)
+        self.target = -1 * np.ones(self.n_fiber)
+
+        # We use this object to import all the positioner geometry variable
+        self.positioner = Positioner()
+
+    def set_available(self, position, ID_list):
         """
         Set-up the list and number of available targets to this positioner
          
         Args:
+             position (int): position in the list to be updated
              ID_list (int): array of available galaxies
+             
         """
-        self.available_targets = ID_list.copy()
-        self.n_targets = np.size(self.available_targets)
+        self.available_targets[position] = ID_list.copy()
+        self.n_targets[position] = np.size(self.available_targets)
 
-    def reset_available(self):
+    def reset_available(self, position):
+        """
+        Reset the list and number of available targets to this positioner
+         
+        Args:
+             position (int): position in the list to be updated
+        """
+        self.available_targets[position] = None
+        self.n_targets[position] = 0
+
+    def reset_all_available(self):
         """
         Resets the list and number of available targets to this positioner
         """
-        self.available_targets  =  None
-        self.n_targets = 0
+        self.available_targets = [None] * self.n_fiber
+        self.n_targets = np.zeros(self.n_fiber)
 
-    def set_target(self, target_id):
+    def set_target(self, position, target_id):
         """
         Sets the id of the target assigned to this positioner
         Args:
+             position (int): position in the list to be updated
             target_id (int): id of the target assigned to this positioner
         """
-        self.target  = target_id
+        self.target[position]  = target_id
 
-    def reset_target(self, target_id):
+
+    def reset_target(self, position):
+        """
+        resets the id of the target assigned to this positioner
+        Args:
+             position (int): position in the list to be updated
+            target_id (int): id of the target assigned to this positioner
+        """
+        self.target[position]  = -1
+
+    def reset_all_targets(self, target_id):
         """
         resets the id of the target assigned to this positioner
         """
-        self.target  = -1
-        
+        self.target = -1 * np.ones(self.n_fiber)
 
+
+    
+    

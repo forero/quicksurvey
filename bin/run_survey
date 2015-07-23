@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 vanilla survey strategy
 """
@@ -15,55 +14,46 @@ from quicksurvey import nextfields
 
 # load the configuration
 util.configuration.setup_survey('survey_config_cosma.cfg')
+config = util.configuration.__CONFIG__
 
 # load a mock catalog and perform target selection
-
+# PENDING
 # make target selection
+# PENDING
 
-
-# load pack unperturbed fibers on the focal plane
-fiberlocation = util.configuration.__CONFIG__.get('general', 'desimodel_path'),
-fiber_file = os.path.join(util.configuration.__CONFIG__.get('general', 'desimodel_path')
+# load pack of unperturbed fibers
+fiberlocation = config.get('general', 'desimodel_path'),
+fiber_file = os.path.join(config.get('general', 'desimodel_path')
                           , 'data/focalplane/', 'fiberpos.fits')
 fiber_pack =  util.FocalPlaneFibers(fiber_file)
 
-
-# generate a pack of positioners attached to the fibers
-positioner_pack = []
-for i in range(fiber_pack.n_fiber):
-    positioner_pack.append(util.Positioner(offset_x = fiber_pack.x_focal[i], 
-                                           offset_y = fiber_pack.y_focal[i],
-                                           Theta=0.0, Phi=0.0, 
-                                           id = fiber_pack.fiber_id[i]))
-    
 #makes a list of all available fields
 tile_filename_list = nextfields.select.all_available_files(
-    directory=util.configuration.__CONFIG__.get('targeting', 'target_path'), 
+    directory=config.get('targeting', 'target_path'), 
     condition="*.fits")
 n_tiles  = np.size(tile_filename_list)
 
-# loop over the cycle of the survey
-for day in range(int(util.configuration.__CONFIG__.get('survey', 'number_days'))):
-    print('day %d'%(day))
+# initializes the tile by tile setup with the observed field information
+nextfields.
 
 
-    # loop over each tile
-    for tile in range(n_tiles):
-        print tile
-        tile_file = tile_filename_list[tile]
-        target_tile_pack = util.TargetTile(tile_file)        
-        print target_tile_pack.tile_ra, target_tile_pack.tile_dec, target_tile_pack.n
+# loop over each tile
+for tile in range(n_tiles):
+    print('tile %d'%(tile))
+    tile_file = tile_filename_list[tile]
+    
+    # load the targets and their previous information
+    target_tile_pack = util.TargetTile(tile_file)        
+    print target_tile_pack.tile_ra, target_tile_pack.tile_dec, target_tile_pack.n
+    
+    # find available targets for this set of fibers
+    fiberassign.assign.find_available_targets(fiber_pack, target_tile_pack)
+    
+    # select the targets
+    fiberassign.assign.select_target(fiber_pack, target_tile_pack)
+    
+    
 
-        # move the targets to coordinates on the focal plane
-        target_tile_pack.set_xy_on_focalplane()
-
-        # loop over each positioner to allocate a galaxy
-        n_positioner = len(positioner_pack)
-        for positioner in range(n_positioner):
-            new_pos = fiberassign.assign.assign_positioner(
-                positioner_pack[positioner], target_tile_pack)
-
-        
     # select the fields that will be observed
 
     # loop over each field 
