@@ -11,6 +11,7 @@ from quicksurvey import targeting
 from quicksurvey import fiberassign 
 from quicksurvey import util
 from quicksurvey import nextfields
+from quicksurvey import recordresults
 
 # load the configuration
 util.configuration.setup_survey('survey_config_cosma.cfg')
@@ -30,13 +31,13 @@ fiber_pack =  util.FocalPlaneFibers(fiber_file)
 #makes a list of all available fields
 tile_filename_list = nextfields.select.all_available_files(
     directory=config.get('targeting', 'target_path'), 
-    condition="*.fits")
+    condition="Targets_Tile_*.fits")
 n_tiles  = np.size(tile_filename_list)
 
 # initializes the tile by tile setup with the observed field information
+recordresults.update.initialize_observation_files(tile_filename_list)
 
-
-
+n_tiles = 0
 # loop over each tile
 for tile in range(n_tiles):
     print('tile %d'%(tile))

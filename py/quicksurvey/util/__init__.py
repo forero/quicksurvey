@@ -11,7 +11,7 @@ import numpy as np
 import shapely as shape
 import shapely.geometry as shapeg
 import descartes as desc
-
+import os.path
 
 def plate_dist(theta):
     """
@@ -250,6 +250,40 @@ class TargetTile(object):
         self.n = np.size(self.ra)
         self.x, self.y = radec2xy(self.ra, self.dec, self.tile_ra, self.tile_dec)
 
+        # This section is related to the number of times a galaxy has been observed,
+        # the assigned redshift and the assigned type
+        self.n_observed = np.zeros(self.n)
+        self.assigned_z = -1.0 * np.ones(self.n)
+        self.assigned_type =  np.chararray(self.n, itemsize=8)
+        self.assigned_type[:] = 'NONE'
+    
+    def write_results_to_file(self, filename):
+        """
+        Writes the section associated with the results to a fits file
+        Args:
+            filename (string): the name of the FITS file to write
+        """
+        if(os.path.isfile(filename)):
+            os.remove(filename)
+
+        c0=fits.Column(name='TARGETID', format='K', array=self.id)
+        c1=fits.Column(name='NOBS', format='I', array=self.n_observed)
+        c2=fits.Column(name='ASSIGNEDTYPE', format='8A', array=self.assigned_type)
+        c3=fits.Column(name='ASSIGNEDZ', format='D', array=self.assigned_z)
+
+        cat=fits.ColDefs([c0,c1,c2,c3])
+        table_targetcat_hdu=fits.TableHDU.from_columns(cat)
+
+        table_targetcat_hdu.header['TILE_ID'] = self.tile_id
+        table_targetcat_hdu.header['TILE_RA'] = self.tile_ra
+        table_targetcat_hdu.header['TILE_DEC'] = self.tile_dec
+
+        hdu=fits.PrimaryHDU()
+        hdulist=fits.HDUList([hdu])
+        hdulist.append(table_targetcat_hdu)
+        hdulist.verify()
+        hdulist.writeto(filename)
+        
 
 
 class FocalPlaneFibers(object):
