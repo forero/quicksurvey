@@ -13,14 +13,12 @@ from quicksurvey import util
 from quicksurvey import nextfields
 from quicksurvey import recordresults
 
-# load the configuration
+# load the configuration for this run
 util.configuration.setup_survey('survey_config_cosma.cfg')
 config = util.configuration.__CONFIG__
 
 # load a mock catalog and perform target selection
-# PENDING
-# make target selection
-# PENDING
+# PENDING TO IMPORT
 
 # load pack of unperturbed fibers
 fiberlocation = config.get('general', 'desimodel_path'),
@@ -37,15 +35,25 @@ n_tiles  = np.size(tile_filename_list)
 # initializes the tile by tile setup with the observed field information
 recordresults.update.initialize_observation_files(tile_filename_list)
 
-n_tiles = 0
+# initialize link between targets and tiles
+target_full_pack = util.TargetSurvey(tile_filename_list)
+print(target_full_pack.n_targets)
+
 # loop over each tile
 for tile in range(n_tiles):
+    # resets the fibers
+    fiber_pack.reset_all_available()
+    fiber_pack.reset_all_targets()
+    
+      
+    # load the targets
     print('tile %d'%(tile))
     tile_file = tile_filename_list[tile]
-    
-    # load the targets and their previous information
     target_tile_pack = util.TargetTile(tile_file)        
     print target_tile_pack.tile_ra, target_tile_pack.tile_dec, target_tile_pack.n
+    
+    # load the observational information
+    target_tile_pack.load_results(tile_file)
     
     # find available targets for this set of fibers
     fiberassign.assign.find_available_targets(fiber_pack, target_tile_pack)
@@ -53,20 +61,13 @@ for tile in range(n_tiles):
     # select the targets
     fiberassign.assign.select_target(fiber_pack, target_tile_pack)
     
+    # observe the tile, i.e. update number a given target has been observed
+    target_tile_pack.update_results(fiber_pack)
+
+    # writes the results to file.
+    target_tile_pack.write_results_to_file(tile_file)
+        
+    # update the observational information on all the other relevant tiles
+    # PENDING TO WRITE
+
     
-
-    # select the fields that will be observed
-
-    # loop over each field 
-
-#    for tile in range(n_tiles):
-#        print('tile %d'%(tile))
-        
-        # make the observation of that field
-
-        # get the redshift from the observation
-
-        # update the observations record
-        
-
-

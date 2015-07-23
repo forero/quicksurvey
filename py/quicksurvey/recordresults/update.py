@@ -17,6 +17,5 @@ def initialize_observation_files(tile_file_list):
     if(n_tiles>0):
         for tile_file in tile_file_list:
             target_tile_pack = util.TargetTile(tile_file)                   
-            results_file = tile_file.replace("Targets_Tile", "Results_Tile")
-            target_tile_pack.write_results_to_file(results_file)
+            target_tile_pack.write_results_to_file(tile_file)
 

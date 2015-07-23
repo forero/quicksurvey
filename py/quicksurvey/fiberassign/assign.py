@@ -27,7 +27,7 @@ def find_available_targets(Fibers, Targets):
         if(n_reachable>0):
             # The id's are sorted in increasing distance from fiber
             sort_id  = distance[reachable].argsort()
-            Fibers.set_available(i, reachable[sort_id])
+            Fibers.set_available(i, Targets.id[reachable[sort_id]])
         else:
             Fibers.reset_available(i)            
     return 
