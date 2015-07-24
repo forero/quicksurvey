@@ -45,7 +45,7 @@ def select_target(Fibers, Targets):
     
     Returns:
          Updates the .target field for each Fiber.
-
+         Updates the .fiber field for each Target
     Note:
         - We do not use the information on different kinds of targets
         - We do not use any priority information
@@ -57,4 +57,5 @@ def select_target(Fibers, Targets):
             target_array = Fibers.available_targets[i]
             target = target_array[0]
             Fibers.set_target(i, target)        
+            Targets.set_fiber(target, i)
     return 

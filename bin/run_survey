@@ -39,13 +39,12 @@ recordresults.update.initialize_observation_files(tile_filename_list)
 target_full_pack = util.TargetSurvey(tile_filename_list)
 print(target_full_pack.n_targets)
 
-n_tiles = 1
+n_tiles = 4
 # loop over each tile
 for tile in range(n_tiles):
     # resets the fibers
     fiber_pack.reset_all_available()
     fiber_pack.reset_all_targets()
-    
       
     # load the targets
     print('tile %d'%(tile))
@@ -73,6 +72,7 @@ for tile in range(n_tiles):
 
     # update the global target information where needed
     # TOWRITE
+
 
 
     

@@ -341,13 +341,53 @@ class TargetTile(object):
         self.n = np.size(self.ra)
         self.x, self.y = radec2xy(self.ra, self.dec, self.tile_ra, self.tile_dec)
 
+        # this is related to the fiber assignment 
+        self.fiber = -1.0 * np.ones(self.n, dtype='i4')
+
         # This section is related to the number of times a galaxy has been observed,
         # the assigned redshift and the assigned type
         self.n_observed = np.zeros(self.n, dtype='i4')
         self.assigned_z = -1.0 * np.ones(self.n)
         self.assigned_type =  np.chararray(self.n, itemsize=8)
         self.assigned_type[:] = 'NONE'
-    
+
+    def set_fiber(self, target_id, fiber_id):
+        """
+        Sets the field .fiber[] (in the target_id  location) to fiber_uid
+        Args: 
+            target_id (int): the target_id expected to be in self.id to modify 
+                 its corresponding .fiber[] field
+            fiber_id (int): the fiber_id to be stored for the corresponding target_id
+        """
+        loc = np.where(self.id==target_id)
+        if(np.size(loc)!=0):
+            loc = loc[0]
+            self.fiber[loc]  = fiber_id
+        else:
+            raise ValueError('The fiber with %d ID does not seem to exist'%(fibers_id))
+
+    def reset_fiber(self, target_id):
+        """
+        Resets the field .fiber[] (in the target_id  location) to fiber_uid
+        Args: 
+            target_id (int): the target_id expected to be in self.id to modify 
+                 its corresponding .fiber[] field
+        """
+        loc = np.where(self.id==target_id)
+        if(np.size(loc)!=0):
+            loc = loc[0]
+            self.fiber[loc]  = -1
+        else:
+            raise ValueError('The fiber with %d ID does not seem to exist'%(fibers_id))
+
+
+    def reset_all_fibers(self):
+        """
+        Resets the field .fiber[] for all fibers.
+        """
+        self.fiber = -1.0 * np.ones(self.n, dtype='i4')
+
+
     def write_results_to_file(self, targets_file):
         """
         Writes the section associated with the results to a fits file
@@ -417,9 +457,9 @@ class TargetTile(object):
                     index = np.where(t in self.id)                    
                     index = index[0]
                     self.n_observed[index]  =  self.n_observed[index] + 1
-                    # these two have to be updated as well
+                    # these two have to be updated as well TOWRITE
                     # self.assigned_z[index] 
-                    # self.assigned_type[index] 
+                    # self.assigned_type[index]                     
                 else:
                     raise ValueError('The target associated with fiber_id %d does not exist'%(fibers.id[i]))
 
