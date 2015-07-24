@@ -39,6 +39,7 @@ recordresults.update.initialize_observation_files(tile_filename_list)
 target_full_pack = util.TargetSurvey(tile_filename_list)
 print(target_full_pack.n_targets)
 
+n_tiles = 1
 # loop over each tile
 for tile in range(n_tiles):
     # resets the fibers
@@ -67,7 +68,11 @@ for tile in range(n_tiles):
     # writes the results to file.
     target_tile_pack.write_results_to_file(tile_file)
         
-    # update the observational information on all the other relevant tiles
-    # PENDING TO WRITE
+    # update the observational information on all the other relevant tiles (time consuming!)
+    # recordresults.update.update_observation_files(target_full_pack, target_tile_pack)
+
+    # update the global target information where needed
+    # TOWRITE
+
 
     
