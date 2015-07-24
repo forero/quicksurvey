@@ -481,7 +481,7 @@ class TargetSurvey(object):
     def __init__(self, filename_list):
         n_file = np.size(filename_list)
         for i_file in np.arange(n_file):
-            print filename_list[i_file]
+            print('Adding %s to build TargetSurvey %d files to go'%(filename_list[i_file], n_file - i_file))
             tmp = TargetTile(filename_list[i_file])
             # The first file is a simple initialization
             if(i_file==0):
@@ -495,7 +495,9 @@ class TargetSurvey(object):
                     self.tile_names.append([filename_list[i_file]])
             else: # the other files have to take into account the overlap
                 mask = np.in1d(self.id, tmp.id)
-                print(len(self.tile_names), np.size(self.id))
+
+                if((len(self.tile_names)!=np.size(self.id))):
+                    raise ValueError('Building TargetSurvey the numer of items in the filenames is not the same as in the ids.')
                 for i in np.arange(np.size(self.id)):
                     if(mask[i]==True):
                         self.tile_names[i].append(filename_list[i_file])

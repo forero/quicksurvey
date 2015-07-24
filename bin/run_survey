@@ -32,47 +32,42 @@ tile_filename_list = nextfields.select.all_available_files(
     condition="Targets_Tile_*.fits")
 n_tiles  = np.size(tile_filename_list)
 
+
+
+# initialize an array with all the targets for the whole survey
+target_full_pack = util.TargetSurvey(tile_filename_list)
+print("The total number of targets is %d"%(target_full_pack.n_targets))
+
 # initializes the tile by tile setup with the observed field information
 recordresults.update.initialize_observation_files(tile_filename_list)
 
-# initialize link between targets and tiles
-target_full_pack = util.TargetSurvey(tile_filename_list)
-print(target_full_pack.n_targets)
-
-n_tiles = 4
-# loop over each tile
+# loop over all tiles
 for tile in range(n_tiles):
     # resets the fibers
     fiber_pack.reset_all_available()
     fiber_pack.reset_all_targets()
       
     # load the targets
-    print('tile %d'%(tile))
+    print('starting the allocation of tile %d - %d more tiles to go'%(tile, n_tiles - tile))
     tile_file = tile_filename_list[tile]
     target_tile_pack = util.TargetTile(tile_file)        
     print target_tile_pack.tile_ra, target_tile_pack.tile_dec, target_tile_pack.n
     
-    # load the observational information
-    target_tile_pack.load_results(tile_file)
-    
     # find available targets for this set of fibers
     fiberassign.assign.find_available_targets(fiber_pack, target_tile_pack)
     
-    # select the targets
-    fiberassign.assign.select_target(fiber_pack, target_tile_pack)
+    # select the target for each fiber
+    fiberassign.assign.select_target(fiber_pack, target_tile_pack, target_full_pack)
     
-    # observe the tile, i.e. update number a given target has been observed
+    # observe the tile, i.e. update number of times a given target has been observed
     target_tile_pack.update_results(fiber_pack)
 
-    # writes the results to file.
-    target_tile_pack.write_results_to_file(tile_file)
-        
-    # update the observational information on all the other relevant tiles (time consuming!)
-    # recordresults.update.update_observation_files(target_full_pack, target_tile_pack)
-
-    # update the global target information where needed
-    # TOWRITE
+    # updates the global target information where needed
+    recordresults.update.update_global_targets(target_full_pack, target_tile_pack)
 
 
+# updates the observational information on all the other relevant tiles (time consuming!)
+# has to be changed to a loop on the files not on the targets
+# recordresults.update.sync_observation_files(target_full_pack)
 
     
